@@ -9,16 +9,19 @@ import cStringIO as StringIO
 import lxml.etree as ET
 
 import nagios
-import checkval
+from checkval import checkval
 
 class ApplicationError (Exception):
+    '''Base class for all exceptions raised by check_gmond.'''
     pass
-
 class UsageError (ApplicationError):
+    '''Raised if mandatory arguments are not provided.'''
     pass
 class NoSuchHost (ApplicationError):
+    '''Raised if hostname looks fail.'''
     pass
 class NoSuchMetric (ApplicationError):
+    '''Raised if the given metric cannot be found.'''
     pass
 
 def parse_args():
@@ -45,6 +48,8 @@ def parse_args():
     return (opts, args)
 
 def read_gmond_state (opts):
+    '''Connect to gmond and parse the XML status information.'''
+
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((opts.gmon, 8649))
 
@@ -62,6 +67,8 @@ def read_gmond_state (opts):
     return doc
 
 def list_metrics(host):
+    '''List all the available metrics for the given host.'''
+
     for metric in host.findall('METRIC'):
         print '%-30s %s' % (
             '%s (%s, %s)' % (
@@ -71,6 +78,9 @@ def list_metrics(host):
                 metric.get('VAL'))
 
 def check_metric (opts, host):
+    '''Look up the given metric and check it against the provided warning
+    and critical thresholds.'''
+
     metric = host.find('METRIC[@NAME="%s"]' % opts.metric)
     if metric is None:
         raise NoSuchMetric(opts.metric)
