@@ -1,0 +1,24 @@
+Numerics
+--------
+
+	-w 5		-- warn if > 5
+	-w 1:5		-- warn if between 1..5 (inclusive)
+	-w :5		-- warn if < 5
+	-w 1,2,3	-- warn if in (1,2)
+
+Negate w/ '!':
+
+	-w !5		-- warn if ! > 5
+	-w !1:5		-- warn if outside 1..5 (inclusive)
+	-w !:5		-- warn if ! < 5
+	-w !1,2,3	-- warn if ! in (1,2,3)
+
+Strings
+-------
+
+	-w foo		-- warn if == foo
+	-w foo,bar	-- warn if in (foo, bar)
+
+	-w !foo
+	-w !foo,bar
+

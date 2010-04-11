@@ -1,0 +1,17 @@
+#!/usr/bin/python
+
+STATUS_OKAY     = 0
+STATUS_OK       = STATUS_OKAY
+STATUS_WARN     = 1
+STATUS_CRITICAL = 2
+STATUS_CRIT     = STATUS_CRITICAL
+STATUS_WTF      = 3
+STATUS_UNKNOWN  = STATUS_WTF
+
+STATUS = [
+    'OKAY',
+    'WARN',
+    'CRITICAL',
+    'UNKNOWN',
+    ]
+
