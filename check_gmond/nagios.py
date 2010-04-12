@@ -23,7 +23,7 @@ def result (service, status, msg=None, perfdata=None):
         text.append(': %s' % msg)
     if perfdata:
         text.append(' | ')
-        text.append(','.join(['%s=%s' % x for x in perfdata]))
+        text.append(' '.join(['%s=%s;' % x for x in perfdata]))
     print ''.join(text)
     sys.exit(status)
 
