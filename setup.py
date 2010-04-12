@@ -5,7 +5,7 @@ def read(fname):
     return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 setup(name='check_gmond',
-        version='20100411.1',
+        version='20100411.2',
         install_requires=[
             'lxml',
             ],
