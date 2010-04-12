@@ -9,20 +9,10 @@ import cStringIO as StringIO
 import lxml.etree as ET
 
 import nagios
+from constants import *
+from errors import *
 from checkval import checkval
-
-class ApplicationError (Exception):
-    '''Base class for all exceptions raised by check_gmond.'''
-    pass
-class UsageError (ApplicationError):
-    '''Raised if mandatory arguments are not provided.'''
-    pass
-class NoSuchHost (ApplicationError):
-    '''Raised if hostname looks fail.'''
-    pass
-class NoSuchMetric (ApplicationError):
-    '''Raised if the given metric cannot be found.'''
-    pass
+import gmond
 
 def parse_args():
     p = nagios.OptionParser()
@@ -31,6 +21,8 @@ def parse_args():
     p.add_option('-H', '--host')
     p.add_option('-l', '--list', action='store_true')
     p.add_option('-m', '--metric')
+    p.add_option('-x', '--extra-metrics', action='append',
+            default=[])
     p.add_option('-M', '--missing', default='UNKNOWN',
         help='Exit status on missing host or metric.')
     p.add_option('-o', '--okay')
@@ -38,9 +30,9 @@ def parse_args():
     opts, args = p.parse_args();
 
     try:
-        missing = nagios.STATUS.index(opts.missing)
+        missing = STATUS.index(opts.missing)
     except ValueError:
-        nagios.result(opts.host, nagios.STATUS_WTF,
+        nagios.result(opts.host, STATUS_WTF,
                 'Unknown exit status for -m: %s' % opts.missing)
 
     opts.missing = missing
@@ -69,7 +61,7 @@ def read_gmond_state (opts):
 def list_metrics(host):
     '''List all the available metrics for the given host.'''
 
-    for metric in host.findall('METRIC'):
+    for metric in host.metrics():
         print '%-30s %s' % (
             '%s (%s, %s)' % (
                 metric.get('NAME'),
@@ -81,22 +73,21 @@ def check_metric (opts, host):
     '''Look up the given metric and check it against the provided warning
     and critical thresholds.'''
 
-    metric = host.find('METRIC[@NAME="%s"]' % opts.metric)
-    if metric is None:
-        raise NoSuchMetric(opts.metric)
+    xtra = []
 
-    v = metric.get('VAL')
-    if metric.get('TYPE') != 'string':
-        v = float(v)
+    try:
+        v = host[opts.metric]
+        for m in opts.extra_metrics:
+            xtra.append((m, host[m]))
+    except KeyError, detail:
+        raise NoSuchMetric(detail)
 
-    status = (nagios.STATUS_CRITICAL, nagios.STATUS_WARN,
-            nagios.STATUS_OKAY)
-
+    status = (STATUS_CRITICAL, STATUS_WARN, STATUS_OKAY)
     for s,r in enumerate((opts.critical, opts.warn, opts.okay)):
         if r is not None and checkval(v,r):
             return (status[s], v)
 
-    return (nagios.STATUS_OKAY, v)
+    return (STATUS_OKAY, v, xtra)
 
 def main():
     opts, args = parse_args()
@@ -106,23 +97,24 @@ def main():
             raise UsageError('No host argument.')
 
         doc = read_gmond_state(opts)
-        host = doc.find('//HOST[@NAME="%s"]' % opts.host)
-        if host is None:
-            raise NoSuchNost(opts.host)
+        try:
+            host = gmond.Host(doc.find('//HOST[@NAME="%s"]' % opts.host))
+        except ValueError:
+            raise NoSuchHost(opts.host)
 
         if opts.list:
             list_metrics(host)
-            sys.exit(nagios.STATUS_OKAY)
+            sys.exit(STATUS_OKAY)
         else:
-            state, val = check_metric(opts, host)
+            state, val, xtra = check_metric(opts, host)
             nagios.result(opts.metric, state,
                     msg='%s' % (val),
-                    perfdata=((opts.metric, val),))
+                    perfdata=([(opts.metric, val)] + xtra))
 
     except UsageError, detail:
-        nagios.result(opts.host, nagios.STATUS_WTF, str(detail))
+        nagios.result(opts.host, STATUS_WTF, str(detail))
     except socket.error, detail:
-        nagios.result(opts.host, nagios.STATUS_WTF, str(detail))
+        nagios.result(opts.host, STATUS_WTF, str(detail))
     except (NoSuchHost, NoSuchMetric), detail:
         nagios.result(opts.host, opts.missing, str(detail))
 
