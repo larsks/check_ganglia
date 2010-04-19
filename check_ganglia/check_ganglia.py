@@ -3,19 +3,12 @@
 import os
 import sys
 import optparse
-import socket
-import cStringIO as StringIO
-
-import lxml.etree as ET
 
 import nagios
 from constants import *
 from errors import *
 from checkval import checkval
-import gmond
-
-DEFAULT_GMETAD_QUERY_PORT = 8652
-DEFAULT_GMOND_PORT = 8649
+import ganglia
 
 def parse_args():
     p = nagios.OptionParser()
@@ -49,46 +42,6 @@ def parse_args():
     opts.missing = missing
 
     return (opts, args)
-
-def process_ganglia_results (opts, s):
-    buffer = StringIO.StringIO()
-    while True:
-        data = s.recv(1024)
-        if not data:
-            break
-
-        buffer.write(data)
-
-    buffer.seek(0)
-    doc = ET.parse(buffer)
-
-    try:
-        host = gmond.Host(doc.find('//HOST[@NAME="%s"]' % opts.host))
-    except ValueError:
-        raise NoSuchHost(opts.host)
-
-    return host
-
-def read_gmetad_state (opts):
-    '''Connect to gmetad, query for the status of a particular
-    host, and return the parsed XML tree.'''
-
-    port = opts.port or DEFAULT_GMETAD_QUERY_PORT
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((opts.ganglia_server, port))
-
-    s.send('/%s/%s\n' % (opts.cluster, opts.host))
-    return process_ganglia_results(opts, s)
-
-def read_gmond_state (opts):
-    '''Connect to gmond, read the status information, and
-    return the parsed XML tree.'''
-
-    port = opts.port or DEFAULT_GMOND_PORT
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((opts.ganglia_server, port))
-
-    return process_ganglia_results(opts, s)
 
 def list_metrics(host):
     '''List all the available metrics for the given host.'''
@@ -128,11 +81,14 @@ def main():
         if opts.host is None:
             raise UsageError('No host argument.')
 
+        if opts.query:
+            G = ganglia.Gmetad(opts.ganglia_server, opts.port,
+                    opts.cluster)
+        else:
+            G = ganglia.Gmond(opts.ganglia_server, opts.port)
+
         for x in range(0, int(opts.timing)):
-            if opts.query:
-                host = read_gmetad_state(opts)
-            else:
-                host = read_gmond_state(opts)
+            host = G.query(opts.host)
 
         if opts.list:
             list_metrics(host)
@@ -144,8 +100,6 @@ def main():
                     perfdata=([(opts.metric, val)] + xtra))
 
     except UsageError, detail:
-        nagios.result(opts.host, STATUS_WTF, str(detail))
-    except socket.error, detail:
         nagios.result(opts.host, STATUS_WTF, str(detail))
     except (NoSuchHost, NoSuchMetric), detail:
         nagios.result(opts.host, opts.missing, str(detail))
