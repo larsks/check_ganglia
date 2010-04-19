@@ -49,11 +49,14 @@ class Gmond (object):
         self.port = port
 
     def query(self, host, **kwargs):
-        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect((self.server, self.port))
-        if hasattr(self, '_send_commands'):
-            self._send_commands(s, host, **kwargs)
-        return self.process_results(s, host)
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((self.server, self.port))
+            if hasattr(self, '_send_commands'):
+                self._send_commands(s, host, **kwargs)
+            return self.process_results(s, host)
+        except socket.gaierror, detail:
+            raise ConnectionError(str(detail))
 
     def process_results (self, s, host):
         buffer = StringIO()

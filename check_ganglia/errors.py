@@ -10,4 +10,8 @@ class NoSuchHost (ApplicationError):
 class NoSuchMetric (ApplicationError):
     '''Raised if the given metric cannot be found.'''
     pass
+class ConnectionError (ApplicationError):
+    '''Raised if there are socket errors.'''
+    pass
+
 
