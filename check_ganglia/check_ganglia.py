@@ -14,18 +14,29 @@ from errors import *
 from checkval import checkval
 import gmond
 
+DEFAULT_GMETAD_QUERY_PORT = 8652
+DEFAULT_GMOND_PORT = 8649
+
 def parse_args():
     p = nagios.OptionParser()
 
-    p.add_option('-g', '--gmon', default='localhost')
-    p.add_option('-H', '--host')
+    p.add_option('-g', '--ganglia-server', default='localhost',
+            help='Address of gmond/gmetad host.')
+    p.add_option('-H', '--host',
+            help='Host for which we want metrics.')
     p.add_option('-l', '--list', action='store_true')
     p.add_option('-m', '--metric')
+    p.add_option('--query', action='store_true',
+            help='Use gmetad query interface instead of gmond.')
+    p.add_option('--cluster',
+            help='Cluster name for gmetad query.')
     p.add_option('-x', '--extra-metrics', action='append',
             default=[])
     p.add_option('-M', '--missing', default='UNKNOWN',
-        help='Exit status on missing host or metric.')
+            help='Exit status on missing host or metric.')
     p.add_option('-o', '--okay')
+    p.add_option('-p', '--port')
+    p.add_option('-t', '--timing', default='1')
 
     opts, args = p.parse_args();
 
@@ -39,12 +50,7 @@ def parse_args():
 
     return (opts, args)
 
-def read_gmond_state (opts):
-    '''Connect to gmond and parse the XML status information.'''
-
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect((opts.gmon, 8649))
-
+def process_ganglia_results (opts, s):
     buffer = StringIO.StringIO()
     while True:
         data = s.recv(1024)
@@ -56,7 +62,33 @@ def read_gmond_state (opts):
     buffer.seek(0)
     doc = ET.parse(buffer)
 
-    return doc
+    try:
+        host = gmond.Host(doc.find('//HOST[@NAME="%s"]' % opts.host))
+    except ValueError:
+        raise NoSuchHost(opts.host)
+
+    return host
+
+def read_gmetad_state (opts):
+    '''Connect to gmetad, query for the status of a particular
+    host, and return the parsed XML tree.'''
+
+    port = opts.port or DEFAULT_GMETAD_QUERY_PORT
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((opts.ganglia_server, port))
+
+    s.send('/%s/%s\n' % (opts.cluster, opts.host))
+    return process_ganglia_results(opts, s)
+
+def read_gmond_state (opts):
+    '''Connect to gmond, read the status information, and
+    return the parsed XML tree.'''
+
+    port = opts.port or DEFAULT_GMOND_PORT
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect((opts.ganglia_server, port))
+
+    return process_ganglia_results(opts, s)
 
 def list_metrics(host):
     '''List all the available metrics for the given host.'''
@@ -96,11 +128,11 @@ def main():
         if opts.host is None:
             raise UsageError('No host argument.')
 
-        doc = read_gmond_state(opts)
-        try:
-            host = gmond.Host(doc.find('//HOST[@NAME="%s"]' % opts.host))
-        except ValueError:
-            raise NoSuchHost(opts.host)
+        for x in range(0, int(opts.timing)):
+            if opts.query:
+                host = read_gmetad_state(opts)
+            else:
+                host = read_gmond_state(opts)
 
         if opts.list:
             list_metrics(host)

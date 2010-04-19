@@ -1,0 +1,5 @@
+#!/usr/bin/python
+
+from check_ganglia.check_ganglia import main
+main()
+

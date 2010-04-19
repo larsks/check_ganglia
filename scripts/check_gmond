@@ -1,5 +1,0 @@
-#!/usr/bin/python
-
-from check_gmond.check_gmond import main
-main()
-
