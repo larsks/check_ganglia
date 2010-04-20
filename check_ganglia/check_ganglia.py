@@ -17,19 +17,22 @@ def parse_args():
             help='Address of gmond/gmetad host.')
     p.add_option('-H', '--host',
             help='Host for which we want metrics.')
-    p.add_option('-l', '--list', action='store_true')
-    p.add_option('-m', '--metric')
+    p.add_option('-l', '--list', action='store_true',
+            help='List available metrics on the target host.')
+    p.add_option('-m', '--metric',
+            help='Metric to compare against threshold values.')
     p.add_option('-q', '--query', action='store_true',
             help='Use gmetad query interface instead of gmond.')
     p.add_option('-C', '--cluster',
             help='Cluster name for gmetad query.')
     p.add_option('-x', '--extra-metrics', action='append',
+            help='Additional metrics to return as performance data.',
             default=[])
-    p.add_option('-M', '--missing', default='UNKNOWN',
-            help='Exit status on missing host or metric.')
-    p.add_option('-o', '--okay')
-    p.add_option('-p', '--port')
-    p.add_option('-t', '--timing', default='1')
+    p.add_option('-M', '--missing', default='WARN',
+            help='Exit status on connection failure, missing '
+                    'host or missing metric (default WARN).')
+    p.add_option('-p', '--port',
+            help='Port on which to communicate w/ gmond/gmetad')
 
     opts, args = p.parse_args();
 
@@ -67,10 +70,10 @@ def check_metric (opts, host):
     except KeyError, detail:
         raise NoSuchMetric(detail)
 
-    status = (STATUS_CRITICAL, STATUS_WARN, STATUS_OKAY)
-    for s,r in enumerate((opts.critical, opts.warn, opts.okay)):
+    status = (STATUS_CRITICAL, STATUS_WARN)
+    for s,r in enumerate((opts.critical, opts.warn)):
         if r is not None and checkval(v,r):
-            return (status[s], v)
+            return (status[s], v, xtra)
 
     return (STATUS_OKAY, v, xtra)
 
@@ -87,8 +90,7 @@ def main():
         else:
             G = ganglia.Gmond(opts.ganglia_server, opts.port)
 
-        for x in range(0, int(opts.timing)):
-            host = G.query(opts.host)
+        host = G.query(opts.host)
 
         if opts.list:
             list_metrics(host)
@@ -101,7 +103,7 @@ def main():
 
     except UsageError, detail:
         nagios.result(opts.host, STATUS_WTF, str(detail))
-    except (NoSuchHost, NoSuchMetric), detail:
+    except (ConnectionError, NoSuchHost, NoSuchMetric), detail:
         nagios.result(opts.host, opts.missing, str(detail))
 
 if __name__ == '__main__':
