@@ -4,7 +4,7 @@
 %endif
 
 Name:		check-ganglia
-Version:	20100419.1
+Version:	20100420.1
 Release:	1%{?dist}
 Summary:	Ganglia integration for Nagios.
 
