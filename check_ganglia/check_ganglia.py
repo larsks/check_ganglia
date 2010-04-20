@@ -19,9 +19,9 @@ def parse_args():
             help='Host for which we want metrics.')
     p.add_option('-l', '--list', action='store_true')
     p.add_option('-m', '--metric')
-    p.add_option('--query', action='store_true',
+    p.add_option('-q', '--query', action='store_true',
             help='Use gmetad query interface instead of gmond.')
-    p.add_option('--cluster',
+    p.add_option('-C', '--cluster',
             help='Cluster name for gmetad query.')
     p.add_option('-x', '--extra-metrics', action='append',
             default=[])
