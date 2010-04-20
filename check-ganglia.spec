@@ -16,6 +16,7 @@ BuildRoot:	%(mktemp -ud %{_tmppath}/%{name}-%{version}-%{release}-XXXXXX)
 
 BuildRequires:	python
 Requires:	python
+Obsoletes:	check_gmond
 
 %description
 Ganglia integration for Nagios.
