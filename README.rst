@@ -1,12 +1,13 @@
-===========
-check_gmond
-===========
+=============
+check_ganglia
+=============
 
 :Author: Lars Kellogg-Stedman
 :Email: lars@seas.harvard.edu
 
-This is a Nagios plugin that checks values collected by gmond (part of the
-Ganglia_ project).
+This is a Nagios plugin that checks values collected by Ganglia_.  It can
+poll either ``gmond`` or use the interactive query interface provided by
+``gmetad``.
 
 License
 =======
@@ -29,6 +30,9 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Usage
 =====
 
+Using gmond
+-----------
+
 Generate a WARN status if cpu_wio is >= 30% or CRITICAL if
 cpu_wio is >= 50%::
 
@@ -42,6 +46,25 @@ Generate a CRITICAL status if os_relase is not "2.6.32.9-70.fc12.i686"::
 
   check_gmond -H www.example.com -m os_release -c "!2.6.32.9-70.fc12.i686"
 
+Using gmetad
+------------
+
+Gmetad provides an interactive query interface that allows for efficiently
+fetching a subtree of the XML data.  For environments with large numbers of
+hosts this offer a substantial performance advantage.
+
+Use the ``--query`` flag to activate gmetad support.  In additional to the
+parameters you provide when using gmond, you will also need to provide the
+appropriate Ganglia cluster name with ``--cluster`` (``-C``).  For
+example::
+
+  check_gmond -q -C 'HPC Monitoring' \
+    -H www.example.com -m cpu_wio -w 30 -c 50
+
+If you fail to provide a cluster name or if you mistype the cluster name,
+gmetad will behave essentially just like gmond -- that is, it will dump the
+entire XML tree.
+
 Specifying threshold values
 ===========================
 
@@ -53,16 +76,16 @@ The arguments to the ``-w`` and ``-c`` options use the following syntax:
 For numeric values
 ------------------
 
-- 5       -- return True if v >= 5
-- 3:5     -- return True if 3 <= v <= 5
-- :5      -- return True if v <=5
-- 1,2,3   -- return True if v in (1,2,3)
+- 5       -- match if v >= 5
+- 3:5     -- match if 3 <= v <= 5
+- :5      -- match if v <=5
+- 1,2,3   -- match if v in (1,2,3)
 
 For string values
 ------------------
 
-- foo     -- return True if v == foo
-- foo,bar -- return True if v in (foo, bar)
+- foo     -- match if v == foo
+- foo,bar -- match if v in (foo, bar)
 
 Negation
 --------
@@ -70,10 +93,9 @@ Negation
 You can negate a threshold expression by preceding it with '!'.  For
 example:
 
-- !5      -- return True if v < 5
-- !3:5    -- return True if v<3 || v>5
-- !1,2,3  -- return True if v not in (1,2,3)
-
+- !5      -- match if v < 5
+- !3:5    -- match if v<3 || v>5
+- !1,2,3  -- match if v not in (1,2,3)
 
 .. _ganglia: http://ganglia.sourceforge.net/
 
