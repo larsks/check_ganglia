@@ -32,26 +32,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 Options
 =======
 
-  -h, --help            show this help message and exit
-  -w WARN, --warn=WARN  Warn threshold.
-  -c CRITICAL, --critical=CRITICAL
-                        Critical threshold.
-  -v, --verbose         Make output more verbse.
-  -g GANGLIA_SERVER, --ganglia-server=GANGLIA_SERVER
-                        Address of gmond/gmetad host.
-  -H HOST, --host=HOST  Host for which we want metrics.
-  -l, --list            List available metrics on the target host.
-  -m METRIC, --metric=METRIC
-                        Metric to compare against threshold values.
-  -q, --query           Use gmetad query interface instead of gmond.
-  -C CLUSTER, --cluster=CLUSTER
-                        Cluster name for gmetad query.
-  -x EXTRA_METRICS, --extra-metrics=EXTRA_METRICS
-                        Additional metrics to return as performance data.
-  -M MISSING, --missing=MISSING
-                        Exit status on connection failure, missing host or
-                        missing metric (default WARN).
-  -p PORT, --port=PORT  Port on which to communicate w/ gmond/gmetad
+-h, --help            show this help message and exit
+-w WARN, --warn=WARN  Warn threshold.
+-c CRITICAL, --critical=CRITICAL
+                      Critical threshold.
+-v, --verbose         Make output more verbse.
+-g GANGLIA_SERVER, --ganglia-server=GANGLIA_SERVER
+                      Address of gmond/gmetad host.
+-H HOST, --host=HOST  Host for which we want metrics.
+-l, --list            List available metrics on the target host.
+-m METRIC, --metric=METRIC
+                      Metric to compare against threshold values.
+-q, --query           Use gmetad query interface instead of gmond.
+-C CLUSTER, --cluster=CLUSTER
+                      Cluster name for gmetad query.
+-x EXTRA_METRICS, --extra-metrics=EXTRA_METRICS
+                      Additional metrics to return as performance data.
+-M MISSING, --missing=MISSING
+                      Exit status on connection failure, missing host or
+                      missing metric (default WARN).
+-p PORT, --port=PORT  Port on which to communicate w/ gmond/gmetad
 
 Examples
 ========
