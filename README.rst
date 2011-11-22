@@ -43,6 +43,8 @@ Options
 -l, --list            List available metrics on the target host.
 -m METRIC, --metric=METRIC
                       Metric to compare against threshold values.
+-X EXPRESSION, --expression=EXPRESSION
+                      Expression to compare against threshold values.
 -q, --query           Use gmetad query interface instead of gmond.
 -C CLUSTER, --cluster=CLUSTER
                       Cluster name for gmetad query.
@@ -110,6 +112,22 @@ For example::
 will actually show up all on one line).
 
 .. _pnp4nagios: http://www.pnp4nagios.org/
+
+Using expressions
+=================
+
+In some cases, the value provided by Ganglia is not, by itself, to meet
+your monitoring needs.  You can ask `check_ganglia` to evaluate an
+arbitrary Python expression to compute the value of a metric with the
+`--expression` option.  The `host` dictionary is available to this
+expression, the keys of which are the values available from Ganglia.
+
+For example, if we want to adjust the value of `load_five` by dividing it
+by the number of cores in the system, we could call `check_ganglia` like
+this::
+
+  check_ganglia -q -C 'My cluster' -H host.example.com \
+    -m load_five --expression 'host["load_five"]/host["cpu_num"]'
 
 Specifying threshold values
 ===========================
