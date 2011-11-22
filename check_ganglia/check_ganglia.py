@@ -21,6 +21,8 @@ def parse_args():
             help='List available metrics on the target host.')
     p.add_option('-m', '--metric',
             help='Metric to compare against threshold values.')
+    p.add_option('-X', '--expression',
+            help='Expression to compare against threshold values.')
     p.add_option('-q', '--query', action='store_true',
             help='Use gmetad query interface instead of gmond.')
     p.add_option('-C', '--cluster',
@@ -64,7 +66,11 @@ def check_metric (opts, host):
     xtra = []
 
     try:
-        v = host[opts.metric]
+        if opts.expression:
+            v = eval(opts.expression)
+        else:
+            v = host[opts.metric]
+
         for m in opts.extra_metrics:
             xtra.append((m, host[m]))
     except KeyError, detail:
